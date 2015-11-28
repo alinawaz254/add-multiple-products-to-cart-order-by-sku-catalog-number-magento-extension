@@ -1,0 +1,110 @@
+ <?php
+/**
+ * Order By Catalog Number Extension
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License (AFL 3.0)
+ * that is bundled with this package in the file LICENSE_AFL.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://opensource.org/licenses/afl-3.0.php
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to ali.nawaz@cooperativecomputing.com so we can send you a copy immediately.
+ *
+ * @category    Cooperative Computing
+ * @package     CooperativeComputing_AddMultipleProducts
+ * @author      Ali Nawaz <ali.nawaz@cooperativecomputing.com>
+ * @copyright   Copyright 2015 Cooperative Computing (http://www.cooperativecomputing.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ */
+?>
+
+<div class="page-title">
+    <h1><?php echo Mage::getModel('cms/block')->setStoreId(Mage::app()->getStore()->getId())->load('order-by-catalog-number')->getTitle(); ?></h1>
+</div>
+
+<?php
+    $staticBlock = $this->getLayout()->createBlock('cms/block')->setBlockId('order-by-catalog-number')->toHtml();
+    if ($staticBlock) {
+        echo $staticBlock;
+    } else {
+        echo '<p>Create static block with identifier: order-by-catalog-number</p>';
+    }
+
+    $collection = Mage::getResourceModel('catalog/product_collection')
+        ->addAttributeToFilter('type_id', array('eq' => 'simple'))
+        ->addAttributeToSelect('*') // or just the attributes you need
+        ->addAttributeToSort('sku', 'asc');
+
+    $collection->getSelect()->joinLeft(array('link_table' => 'catalog_product_super_link'),
+        'link_table.product_id = e.entity_id',
+        array('product_id')
+    );
+    $collection->getSelect()->where('link_table.product_id IS NULL');
+?>
+
+<p>&nbsp;</p>
+
+<form action="<?php echo $this->getUrl('order-by-catalog-number/add'); ?>" method="post" enctype="multipart/form-data" id="addMultipleProducts_form">
+    <div class="row">
+        <div class="col-lg-6">
+            <label>Item #</lebel>
+        </div>
+        <div class="col-lg-6">
+            <label>Quantity</lebel>
+        </div>
+    </div>
+
+    <div class="products">
+        <?php for ($x=0; $x<10; $x++) { ?>
+            <div class="row" style="margin-top:5px;">
+                <div class="col-lg-6">
+                    <select name="product_ids[]" class="form-control input-sm" placeholder="Item #">
+                        <option></option>
+                        <?php foreach ($collection as $product) { ?>
+                            <option value="<?php echo $product->getId(); ?>"><?php echo $product->getSku(); ?></option>
+                        <?php } ?>
+                    </select>
+                </div>
+                <div class="col-lg-5">
+                    <input type="text" name="product_quantities[]" class="form-control" value="1" placeholder="Qty" />
+                </div>
+                <div class="col-lg-1">
+                    <span class="fa fa-times" aria-hidden="true" style="font-size:20px; color:#f50c0c; cursor:pointer;" onclick="removeRow(this)"></span>
+                </div>
+            </div>
+        <?php } ?>
+    </div>
+
+    <div class="row">
+        <div class="buttons-set">
+            <input type="text" name="hideit" id="hideit" value="" style="display:none !important;" />
+            <button type="submit" title="<?php echo $this->__('Add to Cart'); ?>" class="button">
+                <span>
+                    <span><?php echo $this->__('Add to Cart'); ?></span>
+                </span>
+            </button>
+
+            <button type="button" title="<?php echo $this->__('Add a Row'); ?>" class="button" style="margin-right:10px;" onclick="addRow()">
+                <span>
+                    <span><?php echo $this->__('Add a Row'); ?></span>
+                </span>
+            </button>
+        </div>
+    </div>
+</form>
+        
+<script type="text/javascript">
+//<![CDATA[
+    var contactForm = new VarienForm('addMultipleProducts_form', true);
+
+    var removeRow = function(obj) {
+        jQuery(obj).parent().parent().remove();
+    }
+
+    var addRow = function() {
+        jQuery('.products').append('<div class="row" style="margin-top:5px;">' + jQuery('.products').children(':first').html() + '</div>');
+    }
+//]]>
+</script>
